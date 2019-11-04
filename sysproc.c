@@ -89,3 +89,15 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_procinf(void)
+{
+  struct proc_info **p;
+  int *n;
+  if(argptr(1, (void*)&n, sizeof(*n))<0 || argptr(0, (void*)&p, sizeof(*p))<0)
+    return -1;
+  cprintf("hi i am here %p\n",n);
+  procinf(p,n);
+  return 0;
+}
