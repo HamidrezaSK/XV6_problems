@@ -534,23 +534,25 @@ procdump(void)
 }
 void procinf(struct proc_info ** pk,int *count)
 {
+  acquire(&ptable.lock);
   struct proc * p;
   int count_proc = 0;
   // cprintf("this is fucking count %d\n",proc_count);
   // struct proc_info proc_info_list[proc_count];
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if(p->state == RUNNING || p->state == RUNNABLE)
     {
-      if(p->state == RUNNING || p->state == RUNNABLE)
-      {
-        cprintf("this is fucking pid %d\n",p->pid);
-        (*pk[count_proc]).pid = p->pid;
-        (*pk[count_proc]).memsize = p->sz;
-        count_proc++;
-      }
+      // cprintf("this is fucking pid %d\n",p->pid);
+      ((*pk)+count_proc)->pid = p->pid;
+      ((*pk)+count_proc)->memsize = p->sz;
+      count_proc++;
     }
-  cprintf("this is fucking proc_info_list %d\n",(*pk[0]).pid);
+  }
+  release(&ptable.lock);
+  // cprintf("this is fucking proc_info_list %d\n",(*pk[0]).pid);
   *count = count_proc;
-  cprintf("this is fucking count %d\n",*count);
-  cprintf("this is fucking count pointer %p\n",count);
+  // cprintf("this is fucking count %d\n",*count);
+  // cprintf("this is fucking count pointer %p\n",count);
   return ;
 }
