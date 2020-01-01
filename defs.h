@@ -122,6 +122,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 void			procinf(struct proc_info **,int *);
+int				waitx(int *wtime , int *rtime);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

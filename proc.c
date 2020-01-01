@@ -110,6 +110,11 @@ found:
   sp -= sizeof *p->context;
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
+  p->stime = ticks;
+  p->rtime = 0;
+  p->iotime = 0;
+  p->etime = 0;
+
   p->context->eip = (uint)forkret;
 
   return p;
@@ -256,13 +261,15 @@ exit(void)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->parent == curproc){
       p->parent = initproc;
-      if(p->state == ZOMBIE)
+      if(p->state == ZOMBIE){
         wakeup1(initproc);
+      }
     }
   }
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+  curproc->etime = ticks;
   sched();
   panic("zombie exit");
 }
@@ -555,4 +562,53 @@ void procinf(struct proc_info ** pk,int *count)
   // cprintf("this is fucking count %d\n",*count);
   // cprintf("this is fucking count pointer %p\n",count);
   return ;
+}
+
+int waitx(int *wtime,int *rtime)
+{
+  struct proc *p;
+  int havekids, pid;
+  struct proc *curproc = myproc();
+  
+  acquire(&ptable.lock);
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->parent != curproc)
+        continue;
+      havekids = 1;
+      if(p->state == ZOMBIE){
+        // Found one.
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        *wtime = p->etime - p->stime - p->rtime;
+        p->iotime = *wtime;
+        *rtime = p->rtime;
+        cprintf("aqa namusan what the fuck rtime: %d \n",p->rtime);
+        cprintf("aqa namusan what the fuck stime: %d \n",p->stime);
+        cprintf("aqa namusan what the fuck etime: %d \n",p->etime);
+        cprintf("aqa namusan what the fuck iotime: %d \n",p->iotime);
+        // *rtime = 55;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!havekids || curproc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
+
+    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+  }
 }
