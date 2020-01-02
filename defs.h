@@ -123,6 +123,8 @@ void            wakeup(void*);
 void            yield(void);
 void			procinf(struct proc_info **,int *);
 int				waitx(int *wtime , int *rtime);
+int 			set_priority(int prio);
+void			ps(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

@@ -31,4 +31,7 @@ SYSCALL(sleep)
 SYSCALL(uptime)
 SYSCALL(procinf)
 SYSCALL(waitx)
+SYSCALL(set_priority)
+SYSCALL(ps)
+
 

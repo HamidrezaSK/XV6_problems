@@ -52,7 +52,8 @@ struct proc {
   int stime;
   int etime;
   int iotime;
-  int rtime;                
+  int rtime;
+  int priority;              
 };
 
  struct proc_info { 
