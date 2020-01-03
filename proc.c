@@ -343,8 +343,6 @@ scheduler(void)
     // Looking for runnable process 
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state == SLEEPING)
-        p->iotime++;
       if(p->state == RUNNABLE){
       // highP = p;
         if ( highP->priority >= p->priority )
@@ -601,7 +599,7 @@ int waitx(int *wtime,int *rtime)
         p->killed = 0;
         p->state = UNUSED;
         *wtime = p->etime - p->stime - p->rtime;
-        // p->iotime = *wtime;
+        p->iotime = *wtime;
         *rtime = p->rtime;
         cprintf("aqa namusan what the fuck rtime: %d \n",p->rtime);
         cprintf("aqa namusan what the fuck stime: %d \n",p->stime);
