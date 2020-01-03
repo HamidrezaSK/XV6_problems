@@ -184,6 +184,7 @@ UPROGS=\
 	_myprogram\
 	_waitx_test\
 	_set_priority_test\
+	_mlq_test\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -256,6 +257,7 @@ EXTRA=\
 	myprogram.c\
 	waitx_test\
 	set_priority_test\
+	mlq_test\
 	printf.c umalloc.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\

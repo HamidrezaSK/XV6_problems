@@ -33,5 +33,7 @@ SYSCALL(procinf)
 SYSCALL(waitx)
 SYSCALL(set_priority)
 SYSCALL(ps)
+SYSCALL(nice)
+
 
 

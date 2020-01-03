@@ -114,7 +114,7 @@ found:
   p->rtime = 0;
   p->iotime = 0;
   p->etime = 0;
-  p->priority = 60;
+  p->priority = 3;
 
   p->context->eip = (uint)forkret;
 
@@ -327,6 +327,52 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+struct proc* findReadyProcess(int *index1, int *index2, int *index3, uint *priority) {
+  int i;
+  struct proc* proc2;
+  struct proc* proc3;
+  int minStime = ticks;
+  for(proc3 = ptable.proc; proc3 < &ptable.proc[NPROC]; proc3++)
+  {
+    if((proc3->state == RUNNABLE)&&(proc3->priority == 2)&&(proc3->stime<minStime))
+      minStime = proc3->stime;
+  }
+  notfound:
+  for (i = 0; i < NPROC; i++) {
+    switch(*priority) {
+      case 1:
+        proc2 = &ptable.proc[(*index1 + i) % NPROC];
+        if (proc2->state == RUNNABLE && proc2->priority == *priority) {
+          *index1 = (*index1 + 1 + i) % NPROC;
+          cprintf("found a runnable process with priority 1\n");
+          return proc2; // found a runnable process with appropriate priority
+        }
+      case 2:
+        proc2 = &ptable.proc[(*index2 + i) % NPROC];
+        if (proc2->state == RUNNABLE && proc2->priority == *priority && proc2->stime == minStime) {
+          *index2 = (*index2 + 1 + i) % NPROC;
+          cprintf("found a runnable process with priority 2\n");
+          return proc2; // found a runnable process with appropriate priority
+        }
+      case 3:
+        proc2 = &ptable.proc[(*index3 + i) % NPROC];
+        if (proc2->state == RUNNABLE && proc2->priority == *priority){
+          *index3 = (*index3 + 1 + i) % NPROC;
+          cprintf("found a runnable process with priority 3\n");
+          return proc2; // found a runnable process with appropriate priority
+        }
+    }
+  }
+  if (*priority == 3) {//did not find any process on any of the prorities
+    *priority = 3;
+    return 0;
+  }
+  else {
+    *priority += 1; //will try to find a process at a lower priority (ighter value of priority)
+    goto notfound;
+  }
+  return 0;
+}
 void
 scheduler(void)
 {
@@ -339,34 +385,56 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    struct proc *highP = ptable.proc;
     // Looking for runnable process 
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state == RUNNABLE){
-      // highP = p;
-        if ( highP->priority >= p->priority )
-          // cprintf("this is shit\n");   // larger value, lower priority 
-          highP = p;
-        }
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+      if(p->state != RUNNABLE)
+        continue;
+      // cprintf("this is the actual P \n pid : %d priority : %d \n",p->pid,p->priority);
+      struct proc *mlfP = 0;
+      int queue = 1;
+      int index1 = 0;
+      int index2 = 0;
+      int index3 = 0;
+      if(p->state != RUNNABLE)
+        continue;
+      // cprintf("now we are going to find an available process\n");
+      mlfP=findReadyProcess(&index1, &index2, &index3, &queue);
+      if(mlfP !=0){
+        // cprintf("after finding the mlfP\n pid : %d priority : %d \n",mlfP->pid,mlfP->priority);
+    }
+    else{
+      // cprintf("fuck\n");
+    }
+
+
+
+
+      if (mlfP != 0)
+        p = mlfP;
+      else{
+        if(p->state != RUNNABLE)
+          continue;
       }
 
-      if(highP->state == RUNNABLE)
+      if(p!=0)
       {
 
-      c->proc = highP;
+      c->proc = p;
       // cprintf("this process with id %d and this is my priority %d \n",c->proc->pid,c->proc->priority);
-      switchuvm(highP);
-      highP->state = RUNNING;
-      swtch(&(c->scheduler), highP->context);
+      switchuvm(p);
+      p->state = RUNNING;
+      swtch(&(c->scheduler), p->context);
       switchkvm();
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
+      }
     }
     release(&ptable.lock);
-    }
+  }
 
   
 }
@@ -637,7 +705,7 @@ int set_priority(int prio){
 }
 
 void ps()
-  {
+{
   struct proc *p;
   
   // Enable interrupts on this processor.
@@ -660,5 +728,22 @@ void ps()
   release(&ptable.lock);
   
   return ;
+}
+
+int nice(int prio)
+{
+  acquire(&ptable.lock);  //DOC: yieldlock
+  // int prev_prio = myproc()->priority;
+  if(prio > 3 || prio < 1)
+  {
+    release(&ptable.lock);
+    return -1;
+  }
+  myproc()->priority = prio;
+  release(&ptable.lock);
+  // cprintf("this the prev priority %d for pid %d\n",prev_prio,myproc()->pid);
+  cprintf("this the new priority %d for pid %d\n",myproc()->priority,myproc()->pid);
+  yield();
+  return 0;
 }
 

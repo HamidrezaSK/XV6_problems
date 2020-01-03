@@ -126,3 +126,13 @@ sys_ps(void)
 {
   return ps();
 }
+
+int
+sys_nice(void)
+{
+  int prio;
+  if(argint(0, &prio) < 0)
+    return -1;
+  // cprintf("arrreee %d \n",prio);
+  return nice(prio);
+}
